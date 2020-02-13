@@ -35,7 +35,7 @@ app.get('/', function (req: express.Request, res: express.Response) {
     const time = $$("td:nth-child(1)").text().replace(/\s/g, "").substring(10, 13); // 시간 부분
     const tem = $$("td:nth-child(3)").text().trim(); // 온도 부분    
 
-    res.json( { result: "OK", date: date, time: time, tem: tem } ); // JSON 출력 {200}
+    res.json( { result: "OK", date, time, tem } ); // JSON 출력 {200}
   })    
   .catch((err) => { 
     console.log(err) // 오류 로그 출력
