@@ -8,8 +8,9 @@ const app = express();
 app.get('/', function (req: express.Request, res: express.Response) {
   const tzO = new Date().getTimezoneOffset() * 60000; // Timezone 설정 (Seoul)
   
-  const date = new Date(Date.now() - tzO).toISOString().split("T")[0]; // 현재 시간 구하기
-  
+  let e = 0;
+
+  const date = new Date(Date.now() - tzO - e).toISOString().split("T")[0]; // 현재 시간 구하기  
 
   const options = { // request-promise 옵션 설정
     uri: `http://www.koreawqi.go.kr/wQDDRealTotalDataList_D.wq?item_id=M69&action_type=L&action_type_seq=1&auto_flag=&auto_site_id=S01007&search_data_type=1&search_flag2=1&river_id=R01&site_id=%27S01004%27&site_name=%B1%B8%B8%AE&search_interval=HOUR&search_date_from=${date}&search_date_to=${date}&order_type_1=MSR_DATE&order_type_2=ASC`,
@@ -25,10 +26,20 @@ app.get('/', function (req: express.Request, res: express.Response) {
   rp(options)
   .then((body) => {
     body = Iconv.decode(Buffer.from(body), 'EUC-KR'); // EUC-KR → UTF-8 변환
-    const $ = cheerio.load(body);
-    const list = $("body > div > table > tbody > tr");         
+    let $ = cheerio.load(body);
+    let list = $("body > div > table > tbody > tr");         
     
-    if(list.length <= 3) res.json({ result: "NO_CONTENT" }); // 값 없음 {204}
+    if(list.length <= 3) {
+      e = 3600000;
+      rp(options)
+      .then((body) => {
+        body = Iconv.decode(Buffer.from(body), 'EUC-KR'); // EUC-KR → UTF-8 변환
+        $ = cheerio.load(body);
+        list = $("body > div > table > tbody > tr");         
+      }).catch((err) => {
+        res.json({ result: "NO_CONTENT" }); // 값 없음 {204}
+      });      
+    }
           
     const $$ = cheerio.load(list[list.length - 1]); // 제일 마지막 값 (최근 측정 온도)
     const date = $$("td:nth-child(1)").text().replace(/\s/g, "").substring(0, 10); // 날짜 부분
